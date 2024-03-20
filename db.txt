@@ -1,0 +1,5 @@
+hero	false
+class	false
+soda	false
+classgym	false
+gym	false
