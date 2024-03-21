@@ -1,5 +1,2 @@
-hero	false
-class	false
-soda	false
-classgym	false
-gym	false
+code rust	false
+make coffee	false
