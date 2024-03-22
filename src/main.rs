@@ -1,46 +1,53 @@
-use std::{collections::HashMap, env, io::Read, str::FromStr};
+use std::{collections::HashMap, env};
 
+#[derive(Debug)]
 struct Todo {
     map: HashMap<String, bool>
 }
 
 impl Todo {
     fn new() -> Result<Todo, std::io::Error> {
-        let mut f = std::fs::OpenOptions::new()
+        let f = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .read(true)
-            .open("db.txt")?;
+            .open("db.json")?;
 
-        let mut content = String::new();
-        f.read_to_string(&mut content)?;
-        let map: HashMap<String, bool> = content
-            .lines()
-            .map(|line| line.splitn(2, '\t').collect::<Vec<&str>>())
-            .map(|v| (v[0], v[1]))
-            .map(|(k, v)| (String::from(k), FromStr::from_str(v).unwrap())).collect();
-            Ok(Todo { map })
+        match serde_json::from_reader(f) {
+            Ok(map) => Ok(Todo {map}),
+            Err(e) if e.is_eof() => Ok(Todo {
+                map: HashMap::new()
+            }), 
+            Err(e) => panic!("An error ocurred: {}", e),
+        }
+
     }
 
     fn insert(&mut self, key: &String) {
-        self.map.insert(key.to_string(), false);
+        self.map.insert(key.to_string(), true);
     }
 
     fn upadte(&mut self, key: &String) -> Option<()> {
         match self.map.get_mut(key) {
-            Some(v) => Some(*v = !*v),
+            Some(v) => {
+                *v = !*v;    
+                println!("Update: {:?}", self.map); 
+                Some({})
+            }
             None => None
         }
     }
 
-    fn save(self) -> Result<(), std::io::Error> {
-        let mut content = String::new();
-        for (k, v) in self.map {
-            let record = format!("{}\t{}\n", k, v);
-            content.push_str(&record);
-        }
+    fn save(self) -> Result<(), Box<dyn std::error::Error>> {
+        let f = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open("db.json")?;
 
-        std::fs::write("db.txt", content)
+        println!(" Save: {:?}", self.map);
+        serde_json::to_writer_pretty(f, &self.map)?;
+
+        Ok(())
     }
 }
 
@@ -51,7 +58,7 @@ fn main() {
 
     let command = &args[1];
     let item = &args[2];
-    
+
     match &command[..] {
         "add" => {
                 todo.insert(item);
