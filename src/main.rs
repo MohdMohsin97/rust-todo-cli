@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Read, str::FromStr};
+use std::{collections::HashMap, env, io::Read, str::FromStr};
 
 struct Todo {
     map: HashMap<String, bool>
@@ -22,8 +22,8 @@ impl Todo {
             Ok(Todo { map })
     }
 
-    fn insert(&mut self, key: String) {
-        self.map.insert(key, false);
+    fn insert(&mut self, key: &String) {
+        self.map.insert(key.to_string(), false);
     }
 
     fn upadte(&mut self, key: &String) -> Option<()> {
@@ -45,24 +45,30 @@ impl Todo {
 }
 
 fn main() {
-    let action = std::env::args().nth(1).expect("Please specify an action");
-    let item = std::env::args().nth(2).expect("Please specify an item");
+    let mut todo = Todo::new().expect("Initialisation of db failed");
 
-    let mut todo = Todo::new().expect("msg");
+    let args: Vec<String> = env::args().collect();
 
-    if action == "add" {
-        todo.insert(item);
-        match todo.save() {
-            Ok(_) => println!("todo saved"),
-            Err(why) => println!("An error occurred: {}", why)
-        }
-    } else if action == "update" {
-        match todo.upadte(&item) {
-            None => println!("{} is not present in the list", item),
-            Some(_) => match todo.save() {
-                Ok(_) => println!("todo saved"),
-                Err(why) => println!("An error occurred: {}", why)
+    let command = &args[1];
+    let item = &args[2];
+    
+    match &command[..] {
+        "add" => {
+                todo.insert(item);
+                    match todo.save() {
+                        Ok(_) => println!("todo saved"),
+                        Err(why) => println!("An error occured: {}", why),
+                    }
+                }
+        "update" => 
+            match todo.upadte(&item) {
+                None => println!("'{}' is not present in the list", item),
+                Some(_) => match todo.save() {
+                    Ok(_) => println!("Todo saved"),
+                    Err(why) => println!("An error ocurred: {}", why)
+                }
             }
-        }
+        _ => println!("worng command")
     }
+
 }
