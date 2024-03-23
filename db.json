@@ -1,1 +1,4 @@
-{"go to gym":true}
+{
+  "make a coffee": false,
+  "go to gym": true
+}

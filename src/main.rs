@@ -24,7 +24,13 @@ impl Todo {
     }
 
     fn insert(&mut self, key: &String) {
-        self.map.insert(key.to_string(), true);
+        self.map.insert(key.to_string(), false);
+    }
+
+    fn list(self) {
+        for (k, v) in self.map {
+            println!("{k} => {v}");
+        }
     }
 
     fn upadte(&mut self, key: &String) -> Option<()> {
@@ -38,13 +44,13 @@ impl Todo {
         }
     }
 
-    fn save(self) -> Result<(), Box<dyn std::error::Error>> {
+    fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let f = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open("db.json")?;
 
-        println!(" Save: {:?}", self.map);
         serde_json::to_writer_pretty(f, &self.map)?;
 
         Ok(())
@@ -57,24 +63,24 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let command = &args[1];
-    let item = &args[2];
-
+    
     match &command[..] {
         "add" => {
-                todo.insert(item);
+                todo.insert(&args[2]);
                     match todo.save() {
-                        Ok(_) => println!("todo saved"),
+                        Ok(_) => todo.list(),
                         Err(why) => println!("An error occured: {}", why),
                     }
                 }
         "update" => 
-            match todo.upadte(&item) {
-                None => println!("'{}' is not present in the list", item),
+            match todo.upadte(&args[2]) {
+                None => println!("'{}' is not present in the list", &args[2]),
                 Some(_) => match todo.save() {
-                    Ok(_) => println!("Todo saved"),
+                    Ok(_) => todo.list(),
                     Err(why) => println!("An error ocurred: {}", why)
                 }
             }
+        "ls" => todo.list(),
         _ => println!("worng command")
     }
 
